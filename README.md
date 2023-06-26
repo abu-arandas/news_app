@@ -10,4 +10,4 @@ A news app built with flutter and news api endpoint.
     5. intl
     6. url_launcher
 
-<img src="assets/Screenshot_1687810032.png"/>    <img src="assets/Screenshot_1687810633.png"/>
+<img src="assets/Screenshot_1687810032.png" width="45%" style="padding-right:5%"/>    <img src="assets/Screenshot_1687810633.png" width="45%" style="padding-right:5%"/>
