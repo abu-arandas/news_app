@@ -2,7 +2,7 @@
 
 class Config {
   // API Keys
-  static const String newsAPIKey = "YOUR_NEWS_API_KEY_HERE";
+  static const String newsAPIKey = "c084c12135e54fdab36e95e3b1b4394b";
   static const String newsAPIBaseURL = "https://newsapi.org/v2";
 
   // Feature Flags

@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "810759775128",
+    "project_id": "wellnest-ffjxl",
+    "storage_bucket": "wellnest-ffjxl.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:810759775128:android:4287e618cd04ebc78a01ed",
+        "android_client_info": {
+          "package_name": "com.arandas.news_app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyB8bQaPdkPYM9jSbBy-Ks-GawukF0V1N0s"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
