@@ -51,7 +51,7 @@ class DefaultFirebaseOptions {
 
   static const FirebaseOptions android = FirebaseOptions(
     apiKey: 'AIzaSyB8bQaPdkPYM9jSbBy-Ks-GawukF0V1N0s',
-    appId: '1:810759775128:android:4287e618cd04ebc78a01ed',
+    appId: '1:810759775128:android:a7672fdd2b7547d68a01ed',
     messagingSenderId: '810759775128',
     projectId: 'wellnest-ffjxl',
     storageBucket: 'wellnest-ffjxl.firebasestorage.app',
@@ -65,4 +65,5 @@ class DefaultFirebaseOptions {
     storageBucket: 'wellnest-ffjxl.firebasestorage.app',
     iosBundleId: 'com.arandas.newsApp',
   );
+
 }
