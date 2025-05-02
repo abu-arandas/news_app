@@ -12,30 +12,45 @@ dependencies:
   flutter:
     sdk: flutter
 
-  flutter_app_name: ^0.1.1
-  flutter_launcher_icons: ^0.11.0
+  # UI
   cupertino_icons: ^1.0.2
-  dio: ^5.2.1+1
-  carousel_slider: ^4.2.1
-  intl: ^0.18.1
-  url_launcher: ^6.1.11
-
-# App Name
-flutter_app_name:
-  name: 'News App'
-
-# App Icon
-flutter_icons:
-  android: 'launcher_icon'
-  ios: true
-  image_path: 'assets/favicon.png'
-  min_sdk_android: 21
+  carousel_slider: ^5.0.0
+  
+  # Networking
+  dio: ^5.3.2
+  internet_connection_checker: ^3.0.1
+  
+  # State Management
+  provider: ^6.0.5
+  
+  # Local Storage
+  sqflite: ^2.3.0
+  path: ^1.8.3
+  shared_preferences: ^2.2.1
+  
+  # Firebase
+  firebase_core: ^3.13.0
+  firebase_auth: ^5.5.3
+  firebase_crashlytics: ^4.3.5
+  
+  # Utils
+  url_launcher: ^6.1.14
+  intl: ^0.20.2
+  flutter_local_notifications: ^19.1.0
+  share_plus: ^11.0.0
 
 dev_dependencies:
   flutter_test:
     sdk: flutter
 
-  flutter_lints: ^3.0.1
+  flutter_lints: ^5.0.0
+  flutter_launcher_icons: ^0.11.0
+  
+flutter_icons:
+  android: 'launcher_icon'
+  ios: true
+  image_path: 'assets/favicon.png'
+  min_sdk_android: 21
 
 flutter:
 
