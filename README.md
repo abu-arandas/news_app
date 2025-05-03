@@ -63,7 +63,6 @@ The app follows **Clean Architecture** principles:
 | `sqflite` / `hive`   | Local storage                |
 | `firebase_crashlytics` | Error monitoring           |
 | `url_launcher`       | Open external links          |
-| `flutter_local_notifications` | Push notifications |
 
 ---
 
