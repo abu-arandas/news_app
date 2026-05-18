@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:news_app/presentation/providers/news_provider.dart';
 import 'package:news_app/presentation/screens/article_detail_screen.dart';
@@ -13,22 +15,57 @@ class SearchScreen extends StatefulWidget {
 
 class _SearchScreenState extends State<SearchScreen> {
   final TextEditingController _searchController = TextEditingController();
+  final ScrollController _scrollController = ScrollController();
   bool _hasSearched = false;
+  Timer? _debounceTimer;
+
+  @override
+  void initState() {
+    super.initState();
+    _scrollController.addListener(_onScroll);
+    _searchController.addListener(_onSearchTextChanged);
+  }
 
   @override
   void dispose() {
+    _searchController.removeListener(_onSearchTextChanged);
     _searchController.dispose();
+    _scrollController.removeListener(_onScroll);
+    _scrollController.dispose();
+    _debounceTimer?.cancel();
     super.dispose();
+  }
+
+  void _onSearchTextChanged() {
+    _debounceTimer?.cancel();
+    _debounceTimer = Timer(const Duration(milliseconds: 300), () {
+      _performSearch();
+    });
+  }
+
+  void _onScroll() {
+    final newsProvider = context.read<NewsProvider>();
+    if (_scrollController.position.pixels >=
+            _scrollController.position.maxScrollExtent - 200 &&
+        newsProvider.searchHasMorePages &&
+        newsProvider.searchStatus != NewsStatus.loading) {
+      newsProvider.searchArticles(newsProvider.searchQuery);
+    }
   }
 
   void _performSearch() {
     final query = _searchController.text.trim();
-    if (query.isNotEmpty) {
+    if (query.isEmpty) {
       setState(() {
-        _hasSearched = true;
+        _hasSearched = false;
       });
-      context.read<NewsProvider>().searchArticles(query);
+      return;
     }
+    setState(() {
+      _hasSearched = true;
+    });
+    FocusScope.of(context).unfocus();
+    context.read<NewsProvider>().searchArticles(query, refresh: true);
   }
 
   @override
@@ -59,6 +96,7 @@ class _SearchScreenState extends State<SearchScreen> {
                 setState(() {
                   _hasSearched = false;
                 });
+                FocusScope.of(context).unfocus();
               },
             ),
         ],
@@ -145,8 +183,18 @@ class _SearchScreenState extends State<SearchScreen> {
             );
           } else {
             return ListView.builder(
-              itemCount: articles.length,
+              controller: _scrollController,
+              itemCount: articles.length + (newsProvider.searchHasMorePages ? 1 : 0),
               itemBuilder: (context, index) {
+                if (index == articles.length) {
+                  return const Center(
+                    child: Padding(
+                      padding: EdgeInsets.all(16.0),
+                      child: CircularProgressIndicator(),
+                    ),
+                  );
+                }
+
                 final article = articles[index];
                 return ArticleCard(
                   article: article,
@@ -161,8 +209,20 @@ class _SearchScreenState extends State<SearchScreen> {
                   onSaveToggle: () {
                     if (newsProvider.isArticleSaved(article.id)) {
                       newsProvider.removeSavedArticle(article.id);
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Text('Article removed from saved'),
+                          duration: Duration(seconds: 2),
+                        ),
+                      );
                     } else {
                       newsProvider.saveArticle(article);
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Text('Article saved for later'),
+                          duration: Duration(seconds: 2),
+                        ),
+                      );
                     }
                   },
                   isSaved: newsProvider.isArticleSaved(article.id),

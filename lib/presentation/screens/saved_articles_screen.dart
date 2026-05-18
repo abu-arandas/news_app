@@ -15,9 +15,9 @@ class _SavedArticlesScreenState extends State<SavedArticlesScreen> {
   @override
   void initState() {
     super.initState();
-    // Refresh saved articles when screen loads
+    final provider = context.read<NewsProvider>();
     Future.microtask(() {
-      context.read<NewsProvider>().loadSavedArticles();
+      provider.loadSavedArticles();
     });
   }
 
@@ -62,26 +62,56 @@ class _SavedArticlesScreenState extends State<SavedArticlesScreen> {
               ),
             );
           } else {
-            return ListView.builder(
-              itemCount: articles.length,
-              itemBuilder: (context, index) {
-                final article = articles[index];
-                return ArticleCard(
-                  article: article,
-                  onTap: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => ArticleDetailScreen(article: article),
-                      ),
-                    );
-                  },
-                  onSaveToggle: () {
-                    newsProvider.removeSavedArticle(article.id);
-                  },
-                  isSaved: true,
-                );
+            return RefreshIndicator(
+              onRefresh: () async {
+                await newsProvider.loadSavedArticles();
               },
+              child: ListView.builder(
+                itemCount: articles.length,
+                itemBuilder: (context, index) {
+                  final article = articles[index];
+                  return Dismissible(
+                    key: ValueKey(article.id),
+                    direction: DismissDirection.endToStart,
+                    background: Container(
+                      alignment: Alignment.centerRight,
+                      padding: const EdgeInsets.only(right: 20),
+                      color: Colors.red,
+                      child: const Icon(Icons.delete, color: Colors.white),
+                    ),
+                    onDismissed: (_) {
+                      newsProvider.removeSavedArticle(article.id);
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Text('Article removed from saved'),
+                          duration: Duration(seconds: 2),
+                        ),
+                      );
+                    },
+                    child: ArticleCard(
+                      article: article,
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => ArticleDetailScreen(article: article),
+                          ),
+                        );
+                      },
+                      onSaveToggle: () {
+                        newsProvider.removeSavedArticle(article.id);
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            content: Text('Article removed from saved'),
+                            duration: Duration(seconds: 2),
+                          ),
+                        );
+                      },
+                      isSaved: true,
+                    ),
+                  );
+                },
+              ),
             );
           }
         },

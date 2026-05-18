@@ -38,8 +38,20 @@ class ArticleDetailScreen extends StatelessWidget {
                 onPressed: () {
                   if (isSaved) {
                     newsProvider.removeSavedArticle(article.id);
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text('Article removed from saved'),
+                        duration: Duration(seconds: 2),
+                      ),
+                    );
                   } else {
                     newsProvider.saveArticle(article);
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text('Article saved for later'),
+                        duration: Duration(seconds: 2),
+                      ),
+                    );
                   }
                 },
                 tooltip: isSaved ? 'Remove from saved' : 'Save for later',
@@ -49,9 +61,11 @@ class ArticleDetailScreen extends StatelessWidget {
           IconButton(
             icon: const Icon(Icons.share),
             onPressed: () {
-              Share.share(
-                'Check out this article: ${article.title}\n${article.url}',
-                subject: article.title,
+              SharePlus.instance.share(
+                ShareParams(
+                  text: 'Check out this article: ${article.title}\n${article.url}',
+                  subject: article.title,
+                ),
               );
             },
           ),

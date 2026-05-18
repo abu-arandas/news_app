@@ -13,6 +13,7 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
+  final ScrollController _scrollController = ScrollController();
   final List<String> categories = [
     '',
     'business',
@@ -38,11 +39,29 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   void initState() {
     super.initState();
-    // Fetch headlines when screen loads
+    _scrollController.addListener(_onScroll);
+    final provider = context.read<NewsProvider>();
     Future.microtask(() {
-      context.read<NewsProvider>().fetchTopHeadlines();
-      context.read<NewsProvider>().loadSavedArticles();
+      provider.fetchTopHeadlines();
+      provider.loadSavedArticles();
     });
+  }
+
+  @override
+  void dispose() {
+    _scrollController.removeListener(_onScroll);
+    _scrollController.dispose();
+    super.dispose();
+  }
+
+  void _onScroll() {
+    final newsProvider = context.read<NewsProvider>();
+    if (_scrollController.position.pixels >=
+            _scrollController.position.maxScrollExtent - 200 &&
+        newsProvider.hasMorePages &&
+        newsProvider.headlinesStatus != NewsStatus.loading) {
+      newsProvider.fetchTopHeadlines();
+    }
   }
 
   @override
@@ -115,23 +134,16 @@ class _HomeScreenState extends State<HomeScreen> {
                       await newsProvider.fetchTopHeadlines(refresh: true);
                     },
                     child: ListView.builder(
+                      controller: _scrollController,
                       itemCount: articles.length + (newsProvider.hasMorePages ? 1 : 0),
                       itemBuilder: (context, index) {
                         if (index == articles.length) {
-                          if (status == NewsStatus.loading) {
-                            return const Center(
-                              child: Padding(
-                                padding: EdgeInsets.all(16.0),
-                                child: CircularProgressIndicator(),
-                              ),
-                            );
-                          } else {
-                            // Load more when reaching the end
-                            Future.microtask(() {
-                              newsProvider.fetchTopHeadlines();
-                            });
-                            return const SizedBox.shrink();
-                          }
+                          return const Center(
+                            child: Padding(
+                              padding: EdgeInsets.all(16.0),
+                              child: CircularProgressIndicator(),
+                            ),
+                          );
                         }
 
                         final article = articles[index];
@@ -148,8 +160,20 @@ class _HomeScreenState extends State<HomeScreen> {
                           onSaveToggle: () {
                             if (newsProvider.isArticleSaved(article.id)) {
                               newsProvider.removeSavedArticle(article.id);
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(
+                                  content: Text('Article removed from saved'),
+                                  duration: Duration(seconds: 2),
+                                ),
+                              );
                             } else {
                               newsProvider.saveArticle(article);
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(
+                                  content: Text('Article saved for later'),
+                                  duration: Duration(seconds: 2),
+                                ),
+                              );
                             }
                           },
                           isSaved: newsProvider.isArticleSaved(article.id),

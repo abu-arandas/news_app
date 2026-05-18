@@ -1,23 +1,30 @@
 import 'package:dio/dio.dart';
+import 'package:internet_connection_checker/internet_connection_checker.dart';
 import 'package:news_app/config.dart';
 import 'package:news_app/data/models/article_model.dart';
 import 'package:news_app/domain/entities/article.dart';
 import 'package:news_app/domain/repositories/news_repository.dart';
+import 'package:news_app/utils/network_info.dart';
 import 'package:sqflite/sqflite.dart';
 import 'package:path/path.dart';
 
 class NewsRepositoryImpl implements NewsRepository {
   final Dio _dio;
-  late Database _database;
-  bool _isDatabaseInitialized = false;
+  final NetworkInfo _networkInfo;
+  Database? _database;
+  Future<void>? _dbInitFuture;
 
-  NewsRepositoryImpl({Dio? dio}) : _dio = dio ?? Dio() {
-    _initDatabase();
-  }
+  NewsRepositoryImpl({required Dio dio, NetworkInfo? networkInfo})
+      : _dio = dio,
+        _networkInfo = networkInfo ?? NetworkInfo(InternetConnectionChecker.instance);
 
   Future<void> _initDatabase() async {
-    if (_isDatabaseInitialized) return;
+    if (_database != null) return;
+    _dbInitFuture ??= _initDatabaseInternal();
+    return _dbInitFuture;
+  }
 
+  Future<void> _initDatabaseInternal() async {
     final databasePath = await getDatabasesPath();
     final path = join(databasePath, 'news_app.db');
 
@@ -29,8 +36,6 @@ class NewsRepositoryImpl implements NewsRepository {
             'CREATE TABLE articles(id TEXT PRIMARY KEY, title TEXT, description TEXT, url TEXT, urlToImage TEXT, publishedAt TEXT, content TEXT, author TEXT, sourceName TEXT)');
       },
     );
-
-    _isDatabaseInitialized = true;
   }
 
   @override
@@ -40,9 +45,14 @@ class NewsRepositoryImpl implements NewsRepository {
     int page = 1,
     int pageSize = 20,
   }) async {
+    final isConnected = await _networkInfo.isConnected;
+    if (!isConnected) {
+      throw Exception('No internet connection');
+    }
+
     try {
       final response = await _dio.get(
-        '${Config.newsAPIBaseURL}/top-headlines',
+        '/top-headlines',
         queryParameters: {
           'apiKey': Config.newsAPIKey,
           'country': country,
@@ -58,6 +68,8 @@ class NewsRepositoryImpl implements NewsRepository {
       } else {
         throw Exception('Failed to load top headlines');
       }
+    } on DioException {
+      rethrow;
     } catch (e) {
       throw Exception('Failed to load top headlines: $e');
     }
@@ -69,9 +81,14 @@ class NewsRepositoryImpl implements NewsRepository {
     int page = 1,
     int pageSize = 20,
   }) async {
+    final isConnected = await _networkInfo.isConnected;
+    if (!isConnected) {
+      throw Exception('No internet connection');
+    }
+
     try {
       final response = await _dio.get(
-        '${Config.newsAPIBaseURL}/everything',
+        '/everything',
         queryParameters: {
           'apiKey': Config.newsAPIKey,
           'q': query,
@@ -86,6 +103,8 @@ class NewsRepositoryImpl implements NewsRepository {
       } else {
         throw Exception('Failed to search articles');
       }
+    } on DioException {
+      rethrow;
     } catch (e) {
       throw Exception('Failed to search articles: $e');
     }
@@ -94,8 +113,9 @@ class NewsRepositoryImpl implements NewsRepository {
   @override
   Future<List<Article>> getSavedArticles() async {
     await _initDatabase();
+    final db = _database!;
 
-    final List<Map<String, dynamic>> maps = await _database.query('articles');
+    final List<Map<String, dynamic>> maps = await db.query('articles');
 
     return List.generate(maps.length, (i) {
       return ArticleModel(
@@ -115,10 +135,21 @@ class NewsRepositoryImpl implements NewsRepository {
   @override
   Future<void> saveArticle(Article article) async {
     await _initDatabase();
+    final db = _database!;
 
-    await _database.insert(
+    await db.insert(
       'articles',
-      (article as ArticleModel).toJson()..addAll({'id': article.id}),
+      {
+        'id': article.id,
+        'title': article.title,
+        'description': article.description,
+        'url': article.url,
+        'urlToImage': article.urlToImage,
+        'publishedAt': article.publishedAt,
+        'content': article.content,
+        'author': article.author,
+        'sourceName': article.sourceName,
+      },
       conflictAlgorithm: ConflictAlgorithm.replace,
     );
   }
@@ -126,8 +157,9 @@ class NewsRepositoryImpl implements NewsRepository {
   @override
   Future<void> removeArticle(String articleId) async {
     await _initDatabase();
+    final db = _database!;
 
-    await _database.delete(
+    await db.delete(
       'articles',
       where: 'id = ?',
       whereArgs: [articleId],

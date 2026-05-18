@@ -1,3 +1,6 @@
+import 'package:flutter/foundation.dart';
+
+@immutable
 class Article {
   final String id;
   final String title;
@@ -20,4 +23,18 @@ class Article {
     required this.author,
     required this.sourceName,
   });
+
+  @override
+  bool operator ==(Object other) {
+    if (identical(this, other)) return true;
+    return other is Article && other.id == id;
+  }
+
+  @override
+  int get hashCode => id.hashCode;
+
+  @override
+  String toString() {
+    return 'Article(id: $id, title: $title, source: $sourceName)';
+  }
 }

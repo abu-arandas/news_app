@@ -39,6 +39,13 @@ class NewsProvider extends ChangeNotifier {
   String _searchError = '';
   String get searchError => _searchError;
 
+  String _searchQuery = '';
+  String get searchQuery => _searchQuery;
+
+  int _searchCurrentPage = 1;
+  bool _searchHasMorePages = true;
+  bool get searchHasMorePages => _searchHasMorePages;
+
   // Saved Articles
   List<Article> _savedArticles = [];
   List<Article> get savedArticles => _savedArticles;
@@ -106,6 +113,7 @@ class NewsProvider extends ChangeNotifier {
       }
 
       _headlinesStatus = NewsStatus.loaded;
+      _headlinesError = '';
     } catch (e) {
       _headlinesStatus = NewsStatus.error;
       _headlinesError = e.toString();
@@ -115,7 +123,7 @@ class NewsProvider extends ChangeNotifier {
   }
 
   // Search articles
-  Future<void> searchArticles(String query) async {
+  Future<void> searchArticles(String query, {bool refresh = false}) async {
     if (query.isEmpty) {
       _searchResults = [];
       _searchStatus = NewsStatus.initial;
@@ -123,13 +131,42 @@ class NewsProvider extends ChangeNotifier {
       return;
     }
 
+    if (refresh) {
+      _searchCurrentPage = 1;
+      _searchHasMorePages = true;
+    }
+
+    _searchQuery = query;
+
+    if (_searchStatus == NewsStatus.loading || (!_searchHasMorePages && !refresh)) {
+      return;
+    }
+
     _searchStatus = NewsStatus.loading;
+    if (_searchCurrentPage == 1) {
+      _searchResults = [];
+    }
     notifyListeners();
 
     try {
-      final articles = await searchArticlesUseCase.execute(query: query);
-      _searchResults = articles;
+      final articles = await searchArticlesUseCase.execute(
+        query: query,
+        page: _searchCurrentPage,
+      );
+
+      if (articles.isEmpty) {
+        _searchHasMorePages = false;
+      } else {
+        if (_searchCurrentPage == 1) {
+          _searchResults = articles;
+        } else {
+          _searchResults.addAll(articles);
+        }
+        _searchCurrentPage++;
+      }
+
       _searchStatus = NewsStatus.loaded;
+      _searchError = '';
     } catch (e) {
       _searchStatus = NewsStatus.error;
       _searchError = e.toString();
@@ -147,6 +184,7 @@ class NewsProvider extends ChangeNotifier {
       final articles = await getSavedArticlesUseCase.execute();
       _savedArticles = articles;
       _savedArticlesStatus = NewsStatus.loaded;
+      _savedArticlesError = '';
     } catch (e) {
       _savedArticlesStatus = NewsStatus.error;
       _savedArticlesError = e.toString();

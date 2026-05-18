@@ -29,6 +29,7 @@ class ArticleModel extends Article {
 
   Map<String, dynamic> toJson() {
     return {
+      'id': id,
       'title': title,
       'description': description,
       'url': url,
